@@ -1,41 +1,48 @@
 from sender import Sender
 from receiver import Receiver
 from timer import Timer
-from config import PROPAGATION_TIME, VERBOSE
+from config import (
+    PROPAGATION_TIME,
+    VERBOSE,
+)
 from time import sleep
+from random import random, randint
+from copy import deepcopy
 
 
 def log(*args, **kwargs):
-    print("Main:\t\t", *args, **kwargs)
+    if VERBOSE:
+        print("Main:\t\t", *args, **kwargs)
 
 
-def get_data():
-    return [1, 2, 3, 4, 5]
+def generate_data(length):
+    return [randint(0, 2**8 - 1) for i in range(length)]
 
 
-sender_to_receiver_line = list()
-receiver_to_sender_line = list()
+def run_experiment(data, p_1, p_2):
+    sender_to_receiver_line = list()
+    receiver_to_sender_line = list()
 
-
-def main():
     sender = Sender()
     receiver = Receiver()
 
-    sender = Sender(verbose=True)
-    sender.incoming_data = get_data()
+    data_to_send = deepcopy(data)
+    sender.incoming_data = deepcopy(data_to_send)
 
-    iteration = 1
+    iteration = 0
 
-    while True:
+    while receiver.received_data != data_to_send:
+        iteration += 1
+        # print(f"Iteration {iteration}")
         if VERBOSE:
             print()  # New line
-        log(f"tick, iteration {iteration}\tn_s = {sender.n_s}\t\tn_r = {receiver.n_r}")
+        log(f"Tick, iteration {iteration}\tn_s = {sender.n_s}\t\tn_r = {receiver.n_r}")
 
         ## Sender -> Receiver ##
         # Update propagation timers
         for index, item in enumerate(sender_to_receiver_line):
             item["timer"].tick()
-            if item["timer"].get() >= PROPAGATION_TIME:
+            if item["timer"].get() >= PROPAGATION_TIME - 1:
                 sender_to_receiver_line.pop(index)
                 receiver.incoming_frames.append(item["frame"])
                 log(
@@ -44,7 +51,10 @@ def main():
 
         # If there are outgoing frames
         if len(sender.outgoing_frames) > 0:
-            frame = sender.outgoing_frames.pop(0)
+            frame = deepcopy(sender.outgoing_frames.pop(0))
+            if random() <= p_1:
+                frame[0] = 0
+                log("\033[48:5:208mFrame got corrupted\033[m\n")
             propagaiton_timer = Timer()
             sender_to_receiver_line.append({"timer": propagaiton_timer, "frame": frame})
             propagaiton_timer.start()
@@ -54,24 +64,37 @@ def main():
         # Update propagation timers
         for index, item in enumerate(receiver_to_sender_line):
             item["timer"].tick()
-            if item["timer"].get() >= PROPAGATION_TIME:
+            if item["timer"].get() >= PROPAGATION_TIME - 1:
                 receiver_to_sender_line.pop(index)
-                sender.incoming_ack.append(item["frame"])
+                sender.incoming_ack.append(item["ack"])
                 log(f"Moved ACK from receiver_to_sender_line to sender.incoming_ack")
         # If there are outgoing ACK
         if len(receiver.outgoing_ack) > 0:
-            ack = receiver.outgoing_ack.pop(0)
+            ack = deepcopy(receiver.outgoing_ack.pop(0))
+            if random() <= p_2:
+                log("\033[48:5:208mACK got corrupted\033[m\n")
+                ack[0] = 0
             propagaiton_timer = Timer()
-            receiver_to_sender_line.append({"timer": propagaiton_timer, "frame": frame})
+            receiver_to_sender_line.append({"timer": propagaiton_timer, "ack": ack})
             propagaiton_timer.start()
             log(f"Added ACK to receiver_to_sender_line")
 
         sender.tick()
         receiver.tick()
-        iteration += 1
         if VERBOSE:
-            sleep(0.5)
+            sleep(0.1)
+
+    log(
+        f"\033[92mData transfer finished\tno. iterations = {iteration}\t received data = {receiver.received_data}\033[00m"
+    )
+    return {"iterations": iteration, "received_data": receiver.received_data}
 
 
 if __name__ == "__main__":
-    main()
+    p_1 = 0.2
+    p_2 = 0
+    data = [randint(0, 2**8 - 1) for i in range(20)]
+    result = run_experiment(data, p_1, p_2)
+    print(
+        f'Iterations = {result["iterations"]}\t received_data = {result["received_data"]}'
+    )

@@ -22,7 +22,7 @@ class Receiver:
             frame = self.incoming_frames.pop(0)
             self.log(f"Incoming frame {frame}")
             if (not self.is_corrupted(frame)) and (frame[1] == self.n_r):
-                self.log("\033[92mincoming frame is valid\033[00m")
+                self.log("\033[92mIncoming frame is valid\033[00m")
                 self.receive_frame(frame)
                 self.send_ack()
             else:
