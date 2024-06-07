@@ -91,8 +91,8 @@ def run_experiment(data, p_1, p_2):
 
 
 if __name__ == "__main__":
-    p_1 = 0.2
-    p_2 = 0
+    p_1 = 0
+    p_2 = 0.5
     data = [randint(0, 2**8 - 1) for i in range(20)]
     result = run_experiment(data, p_1, p_2)
     print(

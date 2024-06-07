@@ -69,7 +69,7 @@ class Sender:
 
     def resend_frame(self):
         self.timer.stop()
-        frame = self.stored_frames[self.n_s]
+        frame = deepcopy(self.stored_frames[self.n_s])
         self.outgoing_frames.append(frame)
         self.timer.start()
 
