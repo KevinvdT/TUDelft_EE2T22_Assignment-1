@@ -16,6 +16,7 @@ def log(*args, **kwargs):
 
 
 def generate_data(length):
+    """Returns a list of random integers with size `length`"""
     return [randint(0, 2**8 - 1) for i in range(length)]
 
 
@@ -33,7 +34,6 @@ def run_experiment(data, p_1, p_2):
 
     while receiver.received_data != data_to_send:
         iteration += 1
-        # print(f"Iteration {iteration}")
         if VERBOSE:
             print()  # New line
         log(f"Tick, iteration {iteration}\tn_s = {sender.n_s}\t\tn_r = {receiver.n_r}")
@@ -68,6 +68,7 @@ def run_experiment(data, p_1, p_2):
                 receiver_to_sender_line.pop(index)
                 sender.incoming_ack.append(item["ack"])
                 log(f"Moved ACK from receiver_to_sender_line to sender.incoming_ack")
+
         # If there are outgoing ACK
         if len(receiver.outgoing_ack) > 0:
             ack = deepcopy(receiver.outgoing_ack.pop(0))
@@ -81,6 +82,8 @@ def run_experiment(data, p_1, p_2):
 
         sender.tick()
         receiver.tick()
+
+        # When verbose mode is on, to be able to read the output
         if VERBOSE:
             sleep(0.1)
 
@@ -90,10 +93,11 @@ def run_experiment(data, p_1, p_2):
     return {"iterations": iteration, "received_data": receiver.received_data}
 
 
+# If this file is run on its own, rather than imported
 if __name__ == "__main__":
-    p_1 = 0
-    p_2 = 0.5
-    data = [randint(0, 2**8 - 1) for i in range(20)]
+    p_1 = 0.2
+    p_2 = 0
+    data = generate_data(20)
     result = run_experiment(data, p_1, p_2)
     print(
         f'Iterations = {result["iterations"]}\t received_data = {result["received_data"]}'

@@ -1,3 +1,7 @@
+# Used for keeping track of elapsed time ticks for the sender and receiver timeouts,
+# and for the propagation delay
+
+
 class Timer:
     def __init__(self):
         self.timestamp = 0
